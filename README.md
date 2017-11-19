@@ -1,4 +1,4 @@
-# FieldDescriptionsExtended
+# Field Descriptions Extended
 
 ProcessWire module that enables you to extend field descriptions by dividing short descriptions with a longer text that is revealed in a toggle.
 Field Descriptions Extended
