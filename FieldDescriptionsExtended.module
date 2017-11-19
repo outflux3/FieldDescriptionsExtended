@@ -1,0 +1,395 @@
+<?php
+
+/**
+ * Field Descriptions Extended
+ * ====================================
+ * A module that allows longer field descriptions, where part of the description 
+ * may be hidden and revealed either through a toggle, lightbox, or panel.
+ * Also allowing for the usage of pages to store field descriptions, where the content editor
+ * may be used (e.g. ck editor) to insert links, images, or use hanna codes.
+ *
+ * @author Macrura
+ * @copyright Macrura
+ *
+ * ProcessWire 2.x, 3.x
+ * Copyright (C) 2011 by Ryan Cramer
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ *
+ * http://www.processwire.com
+ *
+ * @todo enable edit for superadmins
+ * @todo fix styles for reno/standard
+ *
+ */
+
+class FieldDescriptionsExtended extends WireData implements Module, ConfigurableModule {
+
+	/**
+	 * getModuleInfo is a module required by all modules to tell ProcessWire about them
+	 *
+	 * @return array
+	 *
+	 */
+	public static function getModuleInfo() {
+		return array(
+			'title' => 'Field Descriptions Extended',
+			'version' => 100,
+			'summary' => 'Create extended field descriptions and have the longer part hidden with toggle.',
+			'author' => 'Macrura',
+			'singular' => true,
+			'autoload' => true,
+			'icon' => 'info-circle',
+			'requires'  => 'ProcessWire>=2.8.0, PHP>=5.4',
+		);
+	}
+
+
+	/**
+	 * Data as used by the get/set functions
+	 *
+	 */
+	protected $data = array();
+
+
+	protected static $configDefaults = array(
+
+		'uikit_display_style'   => '', // panel or drop - only applies to page descriptions
+
+		// allow the module to search pages that have the field in question selected? boolean
+		'enable_page_content'		=> 0,
+
+			// field of FieldtypeField, to use in selector
+			// for example "field_select"
+			'descex_field_select'	=> '',
+
+			// the template to use in selector, e.g. basic-page, or help-doc
+			'descex_template'		=> '',
+
+			// field that holds the content on the above template(s)
+			// e.g. body, or data_description etc.
+			'descex_content_field'	=> '',
+
+		// enable simple MDE on the field descriptions editor?
+		'enable_simplemde'		=> 0,
+
+	);
+
+
+	/**
+	 * Set our configuration defaults
+	 * 
+	 */
+	public function __construct() {
+		foreach(self::$configDefaults as $key => $value) {
+			$this->set($key, $value); 
+		}
+	}
+
+
+	/**
+	 * ready() is called when both PW's API is ready and $page object is initialized (for autoload modules!)
+	 * Add the hook here to be able to skip it based on the template of the edited page.
+	 *
+	 */
+	public function ready() {
+
+		$this->className = __CLASS__;
+
+		if(wire('page')->process == 'ProcessField') {
+			if($this->wire('modules')->isInstalled("InputfieldSimpleMDE")) {
+				if($this->enable_simplemde) {
+					$this->addHookAfter('ProcessField::buildEditFormBasics', $this, 'initSimpleMDE');
+				}
+			}
+		}
+
+		if(wire('page')->process != 'ProcessPageEdit') return;
+		$id = (int)$this->input->get('id');
+		if(!$id) return;
+		$this->editedPage = wire('pages')->get($id);
+		if($this->editedPage->template->flags & Template::flagSystem) return;
+		$this->addHookAfter('Inputfield::render', $this, 'addFieldDescriptionLink');
+
+	}
+
+
+	public function addFieldDescriptionLink(HookEvent $event) {
+
+		$inputfield = $event->object;
+		$activeTheme = $this->wire('user')->admin_theme;
+
+		if ($inputfield->type == 'hidden') {
+			return;
+		}
+
+		if (strpos($event->return, 'data-editurl')) {
+			return;
+		}
+
+		if ($field = $this->fields->get($inputfield->name)) {
+
+			if(!is_object($field)) return;
+
+			// FieldtypePage always accompanies the inputfield - this prevents the desc from appearing 2x
+			if($inputfield->class == 'FieldtypePage') {
+				$inputfield->description = '';
+				return;
+			}
+
+			/**
+			 * IF THERE IS A SPECIFIC PAGE CONTAINING THIS FIELD'S DESCRIPTION
+			 * SHOW A LINK TO IT AS THE MORE LINK
+			 * Note that this will only work when the inputfield description is blank.
+			 * The presence of a description is also going to be context sensitive.
+			 * This means you can define a page to use for a field's description and anytime
+			 * that field shows up on a template without a description, it will use this.
+			 * But if the field in that context has a description, that will take precedence.
+			 * 
+			 * @todo add styling to the popup when on non uikit themes
+			 */
+			if(!$inputfield->description && $this->enable_page_content && $this->descex_field_select && $this->descex_template && $this->descex_content_field) {
+
+				$field_select 	= $this->descex_field_select;
+				$template 		= $this->descex_template;
+				$body 			= $this->descex_content_field;
+
+				$selector = array(
+				  'template' 	=> $template,
+				  $field_select	=> $field->id,
+				  $body . '!=' 	=> ''
+				);
+
+				//$descriptionPage = $this->wire('pages')->get("field_select=$field->id");
+				$descriptionPage = $this->wire('pages')->get($selector);
+
+				if($descriptionPage->id && !$inputfield->description) {
+					$id = 'desc_x_' . $inputfield->name;
+					$pageDesc = $descriptionPage->getFormatted('body');
+					$title = $field->label ?: $field->name . ' Field';
+					$intro = '';
+					if(strpos($pageDesc, '<p>-----</p>') !== false) {
+						$descParts = explode('<p>-----</p>', $pageDesc);
+						$pageDesc = $descParts[1];
+						$intro = str_replace(['<p>','</p>'], ['',''], trim($descParts[0]) )  . ' ';
+					}
+
+					$editLink = $this->wire('user')->isSuperuser() ? " <a href='{$descriptionPage->editUrl}' title='Edit' target='_blank'><i class='fa fa-pencil'></i></a>" : '';
+
+					//<i class="fa fa-life-ring"></i>
+					if($activeTheme == 'AdminThemeUikit') {
+						$pageHelp = '
+							<p class="description">' . $intro . '<a href="#' . $id . '" uk-toggle>More...</a></p>
+							<div id="' . $id . '" uk-offcanvas>
+								<div class="uk-offcanvas-bar" style="width:600px;">
+									<button class="uk-offcanvas-close" type="button" uk-close></button>
+									<h3>' . $title . $editLink . '</h3>' .
+									$pageDesc .
+								'</div>
+							</div>';
+					} else {
+						$this->modules->get('JqueryMagnific');
+						$pageHelp = "<p class='description'>{$intro}<a href='#{$id}' class='help-pop'>More...</a></p><div id='{$id}' class='mfp-hide white-popup-block description-extended'><h2>$title $editLink</h2>$pageDesc</div>";
+						$pageHelp .= "<style>.white-popup-block{position:relative;background: #FFF;padding: 20px;width: auto;max-width: 800px;margin: 20px auto;}</style>";
+						$pageHelp .= "<script>$('.help-pop').magnificPopup({type: 'inline'});</script>";
+					}
+
+					$event->return = $pageHelp . $event->return;
+
+				}
+
+				// stop further processing.
+				return;
+
+			}
+
+
+			/**
+			 * BUILD NEW DESCRIPTION FROM THE INPUTFIELD
+			 * IF THERE ARE 5 HYPHENS, SPLIT THE FIELD INTO MAIN AND DROP
+			 */
+			if(strpos($inputfield->description, '-----') !== false) {
+				$id = 'desc_x_' . $inputfield->name;
+				$descParts = explode('-----', $inputfield->description);
+
+				// 1) replace descr, add toggle link, remove description from inputfield (since will be added back by this module)
+				$newDesc = nl2br(trim($descParts[0]));
+
+				// Default Themes
+				$linkMarkup =  ' <a class="field-help-reveal" style="cursor:pointer" data-toggle="#{id}" onclick=\'$("#{id}").fadeToggle("fast"); return false;\'>More...</a>';
+
+				// UiKit Theme
+				if($activeTheme == 'AdminThemeUikit') {
+					$linkMarkup = ' <a class="field-help-reveal" uk-toggle="target: #{id};animation: uk-animation-fade">More...</a>';
+				}
+
+				if($activeTheme != 'AdminThemeUikit') {
+					$file = $this->wire('urls')->{$this->className} . 'fieldStyles.css';
+					$this->config->styles->append($file);
+				}
+
+				$newDesc = $newDesc . str_replace('{id}', $id, $linkMarkup);
+				$inputfield->description = '';
+
+				// 2) setup extended description
+				$extDesc = ltrim($descParts[1]);
+				$extDesc = $this->wire('sanitizer')->entitiesMarkdown($extDesc, array('fullMarkdown' => true));
+				$helpToggle = '<div id="' . $id . '" class="description-extended" style="color:#777" hidden>' . $extDesc . '</div>';
+				$event->return = "<p class='description'>$newDesc</p>" . $helpToggle . $event->return;
+			}
+
+
+		}
+
+	}
+
+
+	public function initSimpleMDE(HookEvent $event) {
+		$this->wire('modules')->get("InputfieldSimpleMDE");
+		$file = $this->wire('urls')->{$this->className} . 'simplemde_init.js';
+		$this->config->scripts->append($file);
+	}
+
+
+    public static function getFormattedOptionName($obj) {
+        return !empty($obj->label) ? $obj->label . ' (' . $obj->name . ')' : $obj->name;
+    }
+
+
+	/**
+	 * Module configuration screen
+	 *
+	 */
+	public static function getModuleConfigInputfields(array $data) {
+
+		foreach(self::$configDefaults as $key => $value) {
+			if(!isset($data[$key])||$data[$key]=="") $data[$key] = $value;
+		}
+
+		unset($data['cacheClear']);
+		$inputfields = new InputfieldWrapper();
+
+
+		// ENABLE SIMPLE MDE ON FIELD DESC
+		// ------------------------------------------------------------------------
+		$f = wire('modules')->get('InputfieldCheckbox'); 
+		$f->attr('name', 'enable_simplemde');
+		$f->attr('value', 1); 
+		if($data['enable_simplemde']) $f->attr('checked', 'checked'); 
+		$f->label = __('Enable SimpleMDE'); 
+		$f->description = __('Check this box to enable SimpleMDE (Simple Markdown Editor) on the field description textarea.');
+		$f->notes = __('This option additionally requires that you have InputfieldSimpleMDE installed.');
+		//$f->columnWidth = 50;
+		//$f->collapsed = Inputfield::collapsedBlank;
+		$inputfields->add($f);
+
+
+		// ENABLE PAGE CONTENT?
+		// ------------------------------------------------------------------------
+		$f = wire('modules')->get('InputfieldCheckbox'); 
+		$f->attr('name', 'enable_page_content');
+		$f->attr('value', 1); 
+		if($data['enable_page_content']) $f->attr('checked', 'checked'); 
+		$f->label = __('Enable Page Content Descriptions'); 
+		$f->description = __('Check this box to enable the system to search pages for description content.');
+		//$f->columnWidth = 50;
+		//$f->collapsed = Inputfield::collapsedBlank;
+		$inputfields->add($f);
+
+        // PAGE CONTENT OPTIONS
+        // ------------------------------------------------------------------------
+		$fset = wire('modules')->get("InputfieldFieldset");
+		$fset->label = 'Page Content Options';
+        $fset->showIf = "enable_page_content=1";
+
+			// Field to use for Field Reference
+			// ------------------------------------------------------------------------
+			$field_fields = wire('fields')->find('type=FieldtypeFields');
+			if (count($field_fields) > 0) {
+				$f              = wire('modules')->get('InputfieldSelect');
+				$f->name        = 'descex_field_select';
+				$f->label       = __('Field Field', __FILE__);
+				$f->description = __('This is the field you will use to specify which field description to show the page\'s content on.', __FILE__);
+				foreach ($field_fields as $field_field) {
+					$f->addOption($field_field->name, self::getFormattedOptionName($field_field));
+				}
+
+				if ($data[ $f->name ]) {
+					$f->attr('value', $data[ $f->name ]);
+				}
+			} else {
+				// add info that no URL type fields are available
+				$f        = wire('modules')->get('InputfieldMarkup');
+				$f->name  = 'no_field_fields';
+				$f->label = __('Field fields', __FILE__);
+				$f->markupText = __('There are no field fields (FieldtypeFields) available to use for connecting page content to field descriptions.', __FILE__);
+			}
+			$f->columnWidth = 33;
+			$fset->add($f);
+
+
+			// Template to search in selector
+			// ------------------------------------------------------------------------
+			$f = wire('modules')->get('InputfieldSelect');
+			$f->attr('name+id', 'descex_template');
+			$f->label = __('Field Description Template', __FILE__);
+			$f->description = __('Select the template to use in the selector for finding the field description.', __FILE__);
+
+			// populate with all available templates
+			foreach(wire('templates') as $t) {
+				// filter out system templates
+				if(!($t->flags & Template::flagSystem)) $f->addOption($t->name);
+			}
+			if(isset($data['descex_template'])) $f->value = $data['descex_template'];
+			$f->columnWidth = 34;
+			$fset->add($f);
+
+
+			// Description Content Field
+			// ------------------------------------------------------------------------
+			$ta_fields = wire('fields')->find('type=FieldtypeTextarea');
+			if (count($ta_fields) > 0) {
+				$f              = wire('modules')->get('InputfieldSelect');
+				$f->name        = 'descex_content_field';
+				$f->label       = __('Content Field', __FILE__);
+				$f->description = __('Please specify which field to use for the description content.', __FILE__);
+				foreach ($ta_fields as $ta_field) {
+					$f->addOption($ta_field->name, self::getFormattedOptionName($ta_field));
+				}
+
+				if ($data[ $f->name ]) {
+					$f->attr('value', $data[ $f->name ]);
+				}
+			} else {
+				// add info that no URL type fields are available
+				$f        = wire('modules')->get('InputfieldMarkup');
+				$f->name  = 'no_ta_fields';
+				$f->label = __('Textarea fields', __FILE__);
+				$f->markupText = __('There are no textarea fields (FieldtypeTextarea) available to use for field descriptions.', __FILE__);
+			}
+			$f->columnWidth = 33;
+			$fset->add($f);
+
+
+		$inputfields->add($fset); 
+		// ------------------------------------------------------------------------
+
+		/* INSTRUCTIONS
+		------------------------------------------------------------------------ */
+		$f = wire('modules')->get('InputfieldMarkup');
+		$f->name  = 'instructions';
+		$f->label = __('Instructions', __FILE__);
+		$text = wireRenderFile(__DIR__ .  '/instructions.php');
+		$f->markupText = __($text, __FILE__);
+		$inputfields->add($f); 
+
+
+		// ------------------------------------------------------------------------
+		return $inputfields;
+
+
+	}
+
+
+
+
+} //

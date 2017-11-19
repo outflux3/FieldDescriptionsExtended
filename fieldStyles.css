@@ -1,0 +1,58 @@
+
+.description-extended strong {
+	font-weight: 700;
+}
+
+/* RESET HEADER MARGINS */
+.description-extended h1,
+.description-extended h2,
+.description-extended h3,
+.description-extended h4 {
+	margin:0 !important;
+	padding:0;
+	margin-bottom: 10px !important;
+	font-weight: 700 !important;
+}
+
+	.description-extended h1 {
+		font-size: 1.7em;
+	}
+
+	.description-extended h2 {
+		font-size: 1.4em;
+	}
+
+	.description-extended h3 {
+		font-size: 1.2em;
+	}
+
+	.description-extended h4 {
+		font-size: 1em;
+	}
+
+
+.description-extended em {
+	font-style: italic;
+}
+
+.description-extended ul {
+    list-style-type: disc !important;
+    padding-left: 35px;
+    margin-bottom: 15px;
+}
+
+.description-extended ul li {
+    margin: .2em 0;
+    display: list-item !important;
+}
+
+.description-extended ol {
+    padding-left: 35px;
+    margin-bottom: 15px;
+}
+
+.description-extended ol li {
+	list-style-type: decimal !important;
+    margin: .2em 0;
+    display: list-item !important;
+}
