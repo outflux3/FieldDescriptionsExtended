@@ -231,7 +231,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 				$inputfield->description = '';
 
 				// 2) setup extended description
-				$extDesc = ltrim($descParts[1]);
+				$extDesc = nl2br(ltrim($descParts[1]));
 				$extDesc = $this->wire('sanitizer')->entitiesMarkdown($extDesc, array('fullMarkdown' => true));
 				$helpToggle = '<div id="' . $id . '" class="description-extended" style="color:#777" hidden>' . $extDesc . '</div>';
 				$event->return = "<p class='description'>$newDesc</p>" . $helpToggle . $event->return;
