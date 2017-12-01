@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Field Descriptions Extended',
-			'version' => 100,
+			'version' => 101,
 			'summary' => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author' => 'Macrura',
 			'singular' => true,
@@ -95,6 +95,9 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 
 		$this->className = __CLASS__;
 
+        // if there's only the default admin theme, $user->admin_theme is not available
+        $this->adminTheme = $this->user->admin_theme ? $this->user->admin_theme : $this->config->defaultAdminTheme;
+
 		if(wire('page')->process == 'ProcessField') {
 			if($this->wire('modules')->isInstalled("InputfieldSimpleMDE")) {
 				if($this->enable_simplemde) {
@@ -116,7 +119,6 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public function addFieldDescriptionLink(HookEvent $event) {
 
 		$inputfield = $event->object;
-		$activeTheme = $this->wire('user')->admin_theme;
 
 		if ($inputfield->type == 'hidden') {
 			return;
@@ -176,7 +178,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 					$editLink = $this->wire('user')->isSuperuser() ? " <a href='{$descriptionPage->editUrl}' title='Edit' target='_blank'><i class='fa fa-pencil'></i></a>" : '';
 
 					//<i class="fa fa-life-ring"></i>
-					if($activeTheme == 'AdminThemeUikit') {
+					if($this->adminTheme == 'AdminThemeUikit') {
 						$pageHelp = '
 							<p class="description">' . $intro . '<a href="#' . $id . '" uk-toggle>More...</a></p>
 							<div id="' . $id . '" uk-offcanvas>
@@ -218,11 +220,11 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 				$linkMarkup =  ' <a class="field-help-reveal" style="cursor:pointer" data-toggle="#{id}" onclick=\'$("#{id}").fadeToggle("fast"); return false;\'>More...</a>';
 
 				// UiKit Theme
-				if($activeTheme == 'AdminThemeUikit') {
+				if($this->adminTheme == 'AdminThemeUikit') {
 					$linkMarkup = ' <a class="field-help-reveal" uk-toggle="target: #{id};animation: uk-animation-fade">More...</a>';
 				}
 
-				if($activeTheme != 'AdminThemeUikit') {
+				if($this->adminTheme != 'AdminThemeUikit') {
 					$file = $this->wire('urls')->{$this->className} . 'fieldStyles.css';
 					$this->config->styles->append($file);
 				}
