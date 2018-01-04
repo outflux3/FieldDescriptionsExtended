@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Field Descriptions Extended',
-			'version' => 101,
+			'version' => 102,
 			'summary' => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author' => 'Macrura',
 			'singular' => true,
@@ -128,7 +128,8 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 			return;
 		}
 
-		if ($field = $this->fields->get($inputfield->name)) {
+		//if ($field = $this->fields->get($inputfield->name)) {
+		if ($field = $inputfield->hasField) {
 
 			if(!is_object($field)) return;
 
@@ -217,25 +218,28 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 				$newDesc = nl2br(trim($descParts[0]));
 
 				// Default Themes
-				$linkMarkup =  ' <a class="field-help-reveal" style="cursor:pointer" data-toggle="#{id}" onclick=\'$("#{id}").fadeToggle("fast"); return false;\'>More...</a>';
+				$linkMarkup = ' <a class="field-help-reveal" id="reveal_{id}" style="cursor:pointer" data-toggle="#{id}" onclick=\'$("#{id}").fadeToggle("fast"); $(this).hide(); $("#hide_{id}").show(); return false;\'>More...</a>';
+				$closeMarkup = '<a class="field-help-close" id="hide_{id}" style="cursor:pointer" onclick=\'$("#{id}").hide("slow"); $(this).hide(); $("#reveal_{id}").show(); return false;\'>Close</a>';
 
 				// UiKit Theme
 				if($this->adminTheme == 'AdminThemeUikit') {
-					$linkMarkup = ' <a class="field-help-reveal" uk-toggle="target: #{id};animation: uk-animation-fade">More...</a>';
+					$linkMarkup = ' <a class="field-help-reveal" id="reveal_{id}" uk-toggle="target: #{id};animation: uk-animation-fade">More...</a>';
+					$closeMarkup = '<a class="field-help-close" id="close_{id}" uk-toggle="target: #{id};animation: uk-animation-fade">Close</a>';
 				}
 
 				if($this->adminTheme != 'AdminThemeUikit') {
-					$file = $this->wire('urls')->{$this->className} . 'fieldStyles.css';
+					$file = $this->wire('config')->urls->{$this->className} . 'fieldStyles.css';
 					$this->config->styles->append($file);
 				}
 
 				$newDesc = $newDesc . str_replace('{id}', $id, $linkMarkup);
+				$closeMarkup = str_replace('{id}', $id, $closeMarkup);
 				$inputfield->description = '';
 
 				// 2) setup extended description
 				$extDesc = nl2br(ltrim($descParts[1]));
 				$extDesc = $this->wire('sanitizer')->entitiesMarkdown($extDesc, array('fullMarkdown' => true));
-				$helpToggle = '<div id="' . $id . '" class="description-extended" style="color:#777" hidden>' . $extDesc . '</div>';
+				$helpToggle = '<div id="' . $id . '" class="description-extended" style="color:#777" hidden>' . $extDesc . $closeMarkup . '</div>';
 				$event->return = "<p class='description'>$newDesc</p>" . $helpToggle . $event->return;
 			}
 
