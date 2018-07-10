@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Field Descriptions Extended',
-			'version' => 102,
+			'version' => 103,
 			'summary' => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author' => 'Macrura',
 			'singular' => true,
@@ -133,8 +133,9 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 
 			if(!is_object($field)) return;
 
-			// FieldtypePage always accompanies the inputfield - this prevents the desc from appearing 2x
-			if($inputfield->class == 'FieldtypePage') {
+			// FieldtypePage usually accompanies the inputfield - this prevents the desc from appearing 2x
+			$allowedPageFields = array('InputfieldSelect'); //, 'InputfieldVisualPageSelector'
+			if($inputfield->class == 'FieldtypePage' && !in_array($inputfield->inputfield, $allowedPageFields)) {
 				$inputfield->description = '';
 				return;
 			}
@@ -219,12 +220,12 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 
 				// Default Themes
 				$linkMarkup = ' <a class="field-help-reveal" id="reveal_{id}" style="cursor:pointer" data-toggle="#{id}" onclick=\'$("#{id}").fadeToggle("fast"); $(this).hide(); $("#hide_{id}").show(); return false;\'>More...</a>';
-				$closeMarkup = '<a class="field-help-close" id="hide_{id}" style="cursor:pointer" onclick=\'$("#{id}").hide("slow"); $(this).hide(); $("#reveal_{id}").show(); return false;\'>Close</a>';
+				$closeMarkup = '<a class="field-help-close" id="hide_{id}" style="cursor:pointer" onclick=\'$("#{id}").hide("slow"); $(this).hide(); $("#reveal_{id}").show(); return false;\'><i class="fa fa-times"></i> Close</a>';
 
 				// UiKit Theme
 				if($this->adminTheme == 'AdminThemeUikit') {
 					$linkMarkup = ' <a class="field-help-reveal" id="reveal_{id}" uk-toggle="target: #{id};animation: uk-animation-fade">More...</a>';
-					$closeMarkup = '<a class="field-help-close" id="close_{id}" uk-toggle="target: #{id};animation: uk-animation-fade">Close</a>';
+					$closeMarkup = '<a class="field-help-close uk-margin-bottom" id="close_{id}" uk-toggle="target: #{id};animation: uk-animation-fade"><i class="fa fa-times"></i> Close</a>';
 				}
 
 				if($this->adminTheme != 'AdminThemeUikit') {
@@ -239,6 +240,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 				// 2) setup extended description
 				$extDesc = nl2br(ltrim($descParts[1]));
 				$extDesc = $this->wire('sanitizer')->entitiesMarkdown($extDesc, array('fullMarkdown' => true));
+				$newDesc = $this->wire('sanitizer')->entitiesMarkdown($newDesc, array('fullMarkdown' => true));
 				$helpToggle = '<div id="' . $id . '" class="description-extended" style="color:#777" hidden>' . $extDesc . $closeMarkup . '</div>';
 				$event->return = "<p class='description'>$newDesc</p>" . $helpToggle . $event->return;
 			}
