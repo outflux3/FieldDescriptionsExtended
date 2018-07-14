@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Field Descriptions Extended',
-			'version' => 103,
+			'version' => 104,
 			'summary' => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author' => 'Macrura',
 			'singular' => true,
@@ -128,17 +128,9 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 			return;
 		}
 
-		//if ($field = $this->fields->get($inputfield->name)) {
 		if ($field = $inputfield->hasField) {
 
 			if(!is_object($field)) return;
-
-			// FieldtypePage usually accompanies the inputfield - this prevents the desc from appearing 2x
-			$allowedPageFields = array('InputfieldSelect'); //, 'InputfieldVisualPageSelector'
-			if($inputfield->class == 'FieldtypePage' && !in_array($inputfield->inputfield, $allowedPageFields)) {
-				$inputfield->description = '';
-				return;
-			}
 
 			/**
 			 * IF THERE IS A SPECIFIC PAGE CONTAINING THIS FIELD'S DESCRIPTION
@@ -212,6 +204,13 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 			 * IF THERE ARE 5 HYPHENS, SPLIT THE FIELD INTO MAIN AND DROP
 			 */
 			if(strpos($inputfield->description, '-----') !== false) {
+
+				$allowedPageFields = array('InputfieldSelect','InputfieldPageListSelect');
+				if($inputfield->class == 'FieldtypePage' && !in_array($inputfield->inputfield, $allowedPageFields)) {
+					$inputfield->description = '';
+					return;
+				}
+
 				$id = 'desc_x_' . $inputfield->name;
 				$descParts = explode('-----', $inputfield->description);
 
@@ -239,10 +238,31 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 
 				// 2) setup extended description
 				$extDesc = nl2br(ltrim($descParts[1]));
-				$extDesc = $this->wire('sanitizer')->entitiesMarkdown($extDesc, array('fullMarkdown' => true));
-				$newDesc = $this->wire('sanitizer')->entitiesMarkdown($newDesc, array('fullMarkdown' => true));
+				// force the links to be new window
+				if(strpos($extDesc, '](')) {
+					$eLinkMarkup = str_replace(array('{url}', '{text}'), array('$2', '$1'), '<a href="{url}" rel="noopener noreferrer nofollow" target="_blank">{text} <i class="fa fa-external-link"></i></a>');
+					$extDesc = preg_replace('/\[(.+?)\]\(([^)]+)\)/', $eLinkMarkup, $extDesc);
+				}
+
+				// force the links to be new window
+				if(strpos($newDesc, '](')) {
+					$eLinkMarkup = str_replace(array('{url}', '{text}'), array('$2', '$1'), '<a href="{url}" rel="noopener noreferrer nofollow" target="_blank">{text} <i class="fa fa-external-link"></i></a>');
+					$newDesc = preg_replace('/\[(.+?)\]\(([^)]+)\)/', $eLinkMarkup, $newDesc);
+				}
+
+				$opts = ["fullMarkdown" => true];
+				$extDesc = $this->wire('sanitizer')->entitiesMarkdown($extDesc, $opts);
+				$newDesc = $this->wire('sanitizer')->entitiesMarkdown($newDesc, $opts);
+
 				$helpToggle = '<div id="' . $id . '" class="description-extended" style="color:#777" hidden>' . $extDesc . $closeMarkup . '</div>';
-				$event->return = "<p class='description'>$newDesc</p>" . $helpToggle . $event->return;
+				
+				// get rid of the duplicate <p></p> tags...
+				$finDesc = "<p class='description'>$newDesc</p>";
+				$s = ["<p class='description'><p>", "</p></p>"];
+				$r = ["<p class='description'>",'</p>'];
+				$finDesc = str_replace($s,$r,$finDesc);
+
+				$event->return = $finDesc . $helpToggle . $event->return;
 			}
 
 
