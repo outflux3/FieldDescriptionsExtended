@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Field Descriptions Extended',
-			'version' => 104,
+			'version' => 105,
 			'summary' => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author' => 'Macrura',
 			'singular' => true,
@@ -145,6 +145,11 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 			 */
 			if(!$inputfield->description && $this->enable_page_content && $this->descex_field_select && $this->descex_template && $this->descex_content_field) {
 
+				if($inputfield->class == 'FieldtypePage') {
+					$inputfield->description = '';
+					return;
+				}
+
 				$field_select 	= $this->descex_field_select;
 				$template 		= $this->descex_template;
 				$body 			= $this->descex_content_field;
@@ -155,7 +160,6 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 				  $body . '!=' 	=> ''
 				);
 
-				//$descriptionPage = $this->wire('pages')->get("field_select=$field->id");
 				$descriptionPage = $this->wire('pages')->get($selector);
 
 				if($descriptionPage->id && !$inputfield->description) {
@@ -174,7 +178,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 					//<i class="fa fa-life-ring"></i>
 					if($this->adminTheme == 'AdminThemeUikit') {
 						$pageHelp = '
-							<p class="description">' . $intro . '<a href="#' . $id . '" uk-toggle>More...</a></p>
+							<p class="description">' . $intro . '<a href="#' . $id . '" uk-toggle>more...</a></p>
 							<div id="' . $id . '" uk-offcanvas>
 								<div class="uk-offcanvas-bar" style="width:600px;">
 									<button class="uk-offcanvas-close" type="button" uk-close></button>
@@ -184,7 +188,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 							</div>';
 					} else {
 						$this->modules->get('JqueryMagnific');
-						$pageHelp = "<p class='description'>{$intro}<a href='#{$id}' class='help-pop'>More...</a></p><div id='{$id}' class='mfp-hide white-popup-block description-extended'><h2>$title $editLink</h2>$pageDesc</div>";
+						$pageHelp = "<p class='description'>{$intro}<a href='#{$id}' class='help-pop'>more...</a></p><div id='{$id}' class='mfp-hide white-popup-block description-extended'><h2>$title $editLink</h2>$pageDesc</div>";
 						$pageHelp .= "<style>.white-popup-block{position:relative;background: #FFF;padding: 20px;width: auto;max-width: 800px;margin: 20px auto;}</style>";
 						$pageHelp .= "<script>$('.help-pop').magnificPopup({type: 'inline'});</script>";
 					}
@@ -205,8 +209,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 			 */
 			if(strpos($inputfield->description, '-----') !== false) {
 
-				$allowedPageFields = array('InputfieldSelect','InputfieldPageListSelect');
-				if($inputfield->class == 'FieldtypePage' && !in_array($inputfield->inputfield, $allowedPageFields)) {
+				if($inputfield->class == 'FieldtypePage') {
 					$inputfield->description = '';
 					return;
 				}
@@ -214,47 +217,46 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 				$id = 'desc_x_' . $inputfield->name;
 				$descParts = explode('-----', $inputfield->description);
 
-				// 1) replace descr, add toggle link, remove description from inputfield (since will be added back by this module)
-				$newDesc = nl2br(trim($descParts[0]));
+				// 1) replace description, add toggle link, remove description from inputfield (since will be added back by this module)
+				$newDesc = $descParts[0];
+				$extDesc = $descParts[1];
 
 				// Default Themes
-				$linkMarkup = ' <a class="field-help-reveal" id="reveal_{id}" style="cursor:pointer" data-toggle="#{id}" onclick=\'$("#{id}").fadeToggle("fast"); $(this).hide(); $("#hide_{id}").show(); return false;\'>More...</a>';
-				$closeMarkup = '<a class="field-help-close" id="hide_{id}" style="cursor:pointer" onclick=\'$("#{id}").hide("slow"); $(this).hide(); $("#reveal_{id}").show(); return false;\'><i class="fa fa-times"></i> Close</a>';
+				$linkMarkup = ' <a class="field-help-reveal" id="reveal_{id}" style="cursor:pointer" data-toggle="#{id}" onclick=\'$("#{id}").fadeToggle("fast"); $(this).hide(); $("#hide_{id}").show(); return false;\'>more...</a>';
+				$closeMarkup = '<a class="field-help-close" id="hide_{id}" style="cursor:pointer" onclick=\'$("#{id}").hide("slow"); $(this).hide(); $("#reveal_{id}").show(); return false;\'><i class="fa fa-times"></i> close</a>';
 
-				// UiKit Theme
+				// UiKit Theme, not loading jQueryUI, so above doesn't work..
 				if($this->adminTheme == 'AdminThemeUikit') {
-					$linkMarkup = ' <a class="field-help-reveal" id="reveal_{id}" uk-toggle="target: #{id};animation: uk-animation-fade">More...</a>';
-					$closeMarkup = '<a class="field-help-close uk-margin-bottom" id="close_{id}" uk-toggle="target: #{id};animation: uk-animation-fade"><i class="fa fa-times"></i> Close</a>';
+					$linkMarkup = ' <a class="field-help-reveal" id="reveal_{id}" uk-toggle="target: #{id};animation: uk-animation-fade" onclick=\'$(this).hide();\'>more...</a>';
+					$closeMarkup = '<a class="field-help-close" id="close_{id}" uk-toggle="target: #{id};animation: uk-animation-fade" onclick=\'$("#reveal_{id}").show();\'><i class="fa fa-times"></i> close</a>';
 				}
 
+				// custom text styles for non-uikit themes
 				if($this->adminTheme != 'AdminThemeUikit') {
 					$file = $this->wire('config')->urls->{$this->className} . 'fieldStyles.css';
 					$this->config->styles->append($file);
 				}
 
-				$newDesc = $newDesc . str_replace('{id}', $id, $linkMarkup);
+				$newDesc = rtrim($newDesc) . str_replace('{id}', $id, $linkMarkup);
 				$closeMarkup = str_replace('{id}', $id, $closeMarkup);
 				$inputfield->description = '';
 
-				// 2) setup extended description
-				$extDesc = nl2br(ltrim($descParts[1]));
 				// force the links to be new window
 				if(strpos($extDesc, '](')) {
 					$eLinkMarkup = str_replace(array('{url}', '{text}'), array('$2', '$1'), '<a href="{url}" rel="noopener noreferrer nofollow" target="_blank">{text} <i class="fa fa-external-link"></i></a>');
 					$extDesc = preg_replace('/\[(.+?)\]\(([^)]+)\)/', $eLinkMarkup, $extDesc);
 				}
-
-				// force the links to be new window
 				if(strpos($newDesc, '](')) {
 					$eLinkMarkup = str_replace(array('{url}', '{text}'), array('$2', '$1'), '<a href="{url}" rel="noopener noreferrer nofollow" target="_blank">{text} <i class="fa fa-external-link"></i></a>');
 					$newDesc = preg_replace('/\[(.+?)\]\(([^)]+)\)/', $eLinkMarkup, $newDesc);
 				}
 
+				// markdown assumed in field formatting...
 				$opts = ["fullMarkdown" => true];
 				$extDesc = $this->wire('sanitizer')->entitiesMarkdown($extDesc, $opts);
 				$newDesc = $this->wire('sanitizer')->entitiesMarkdown($newDesc, $opts);
 
-				$helpToggle = '<div id="' . $id . '" class="description-extended" style="color:#777" hidden>' . $extDesc . $closeMarkup . '</div>';
+				$helpToggle = '<div id="' . $id . '" class="description-extended" style="color:#777;margin-bottom: 10px;" hidden>' . $extDesc . $closeMarkup . '</div>';
 				
 				// get rid of the duplicate <p></p> tags...
 				$finDesc = "<p class='description'>$newDesc</p>";
