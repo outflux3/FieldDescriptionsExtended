@@ -104,6 +104,7 @@
 	<p>If you have any additional questions, comments or issues, please submit an issue on Github, or use the PW forum.</p>
 
 	<ul>
+		<li>Modules Directory: <a href="http://modules.processwire.com/modules/field-descriptions-extended/" target="_blank">http://modules.processwire.com/modules/field-descriptions-extended/</a></li>	
 		<li>Github Repository: <a href="https://github.com/outflux3/FieldDescriptionsExtended" target="_blank">https://github.com/outflux3/FieldDescriptionsExtended</a></li>
 		<li>Processwire Forum Thread: <a href="https://processwire.com/talk/topic/17780-module-field-descriptions-extended/" target="_blank">https://processwire.com/talk/topic/17780-module-field-descriptions-extended/</a></li>
 	</ul>
