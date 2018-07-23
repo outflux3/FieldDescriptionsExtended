@@ -453,8 +453,9 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 		$f = wire('modules')->get('InputfieldMarkup');
 		$f->name  = 'instructions';
 		$f->label = __('Instructions', __FILE__);
-		$text = wireRenderFile(__DIR__ .  '/instructions.php');
-		$f->markupText = __($text, __FILE__);
+		//$text = wireRenderFile(__DIR__ .  '/instructions.php');
+		//$f->markupText = __($text, __FILE__);
+		$f->markupText = wireRenderFile(__DIR__ .  '/instructions.php');
 		$inputfields->add($f); 
 
 
