@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Field Descriptions Extended',
-			'version' => 106,
+			'version' => 108,
 			'summary' => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author' => 'Macrura',
 			'singular' => true,
@@ -113,6 +113,8 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 		if($this->editedPage->template->flags & Template::flagSystem) return;
 		$this->addHookAfter('Inputfield::render', $this, 'extendFieldDescriptions');
 		$this->addHookBefore('Inputfield::render', $this, 'cleanupAjaxDescriptions');
+		$this->addHookAfter('Inputfield::renderValue', $this, 'extendFieldDescriptions');
+		
 	}
 
 
@@ -126,9 +128,10 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 		$inputfield = $event->object;
 		if(!$field = $inputfield->hasField) return;
 		if($field->collapsed == Inputfield::collapsedYesAjax || $field->collapsed == Inputfield::collapsedBlankAjax) {
-			//$inputfield->addClass("fdeAjaxInput","wrapClass");
-			$inputfield->descriptionEx = $inputfield->description;
-			$inputfield->description = '';
+			if(strpos($inputfield->description, '-----') !== false) {
+				$inputfield->descriptionEx = $inputfield->description;
+				$inputfield->description = '';
+			}
 		}
 	}
 
