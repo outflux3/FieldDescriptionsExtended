@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Field Descriptions Extended',
-			'version' => 108,
+			'version' => 109,
 			'summary' => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author' => 'Macrura',
 			'singular' => true,
@@ -173,7 +173,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 			 */
 			if(strpos($inputfield->description, '-----') !== false) {
 
-				if($inputfield->class == 'FieldtypePage') {
+				if($inputfield->class == 'FieldtypePage' || $inputfield->inputfield == 'InputfieldRadios') {
 					$inputfield->description = '';
 					return;
 				}
