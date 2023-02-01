@@ -9,7 +9,7 @@ var initSimpleMDE = function() {
 	var thisID = $(this).attr('id');
 	var visible = $(this).is(":visible");
 
-	console.log($(this));
+	//console.log($(this));
 
 	if(visible) {
 		var simplemde = new SimpleMDE({

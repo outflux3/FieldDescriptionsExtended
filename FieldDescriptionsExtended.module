@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Field Descriptions Extended',
-			'version' => 109,
+			'version' => 110,
 			'summary' => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author' => 'Macrura',
 			'singular' => true,
