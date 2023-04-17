@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Field Descriptions Extended',
-			'version' => 110,
+			'version' => 111,
 			'summary' => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author' => 'Macrura',
 			'singular' => true,
@@ -141,12 +141,14 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 		$inputfield = $event->object;
 
 		// like the ID hidden inputfield
-		if ($inputfield->type == 'hidden') {
+		if($inputfield->type == 'hidden') {
 			return;
 		}
 
-		if (strpos($event->return, 'data-editurl')) {
-			return;
+		if($event->return) {
+			if(strpos($event->return, 'data-editurl')) {
+				return;
+			}
 		}
 
 		if ($field = $inputfield->hasField) {
