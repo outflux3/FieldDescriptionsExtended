@@ -1,15 +1,49 @@
+.description-extended {
+	color: #777;
+	margin-bottom: 10px;
+}
+
+/* Icon trigger links — inline at end of visible description */
+.field-help-reveal,
+.field-help-popup {
+	display: inline-flex;
+	align-items: center;
+	margin-left: 3px;
+	color: inherit;
+	opacity: 0.45;
+	text-decoration: none !important;
+	vertical-align: middle;
+	position: relative;
+	top: -2px;
+	transition: opacity 0.15s ease;
+	cursor: pointer;
+}
+
+.field-help-reveal:hover,
+.field-help-popup:hover {
+	opacity: 1;
+	text-decoration: none !important;
+}
+
+/* Lucide SVG icon sizing */
+.fde-icon {
+	width: 15px;
+	height: 15px;
+	display: inline-block;
+	vertical-align: middle;
+	flex-shrink: 0;
+}
+
 .description-extended strong {
 	font-weight: 700;
 }
 
-/* RESET HEADER MARGINS */
 .description-extended h1,
 .description-extended h2,
 .description-extended h3,
 .description-extended h4 {
-	margin:0 !important;
-	padding:0;
-	margin-bottom: 10px !important;
+	margin: 0 0 10px !important;
+	padding: 0;
 	font-weight: 700 !important;
 }
 
@@ -35,25 +69,25 @@
 }
 
 .description-extended ul {
-    list-style-type: disc !important;
-    padding-left: 35px;
-    margin-bottom: 15px;
+	list-style-type: disc !important;
+	padding-left: 35px;
+	margin-bottom: 15px;
 }
 
 .description-extended ul li {
-    margin: .2em 0;
-    display: list-item !important;
+	margin: .2em 0;
+	display: list-item !important;
 }
 
 .description-extended ol {
-    padding-left: 35px;
-    margin-bottom: 15px;
+	padding-left: 35px;
+	margin-bottom: 15px;
 }
 
 .description-extended ol li {
 	list-style-type: decimal !important;
-    margin: .2em 0;
-    display: list-item !important;
+	margin: .2em 0;
+	display: list-item !important;
 }
 
 /** Field Specific Tweaks */

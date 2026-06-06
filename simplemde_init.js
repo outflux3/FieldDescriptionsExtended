@@ -31,7 +31,7 @@ var initSimpleMDE = function() {
 /**
  * Init the field on page load
  */
-$(window).load(function(){
+$(window).on('load', function(){
 	$('#Inputfield_description').each(initSimpleMDE);
 });
 
