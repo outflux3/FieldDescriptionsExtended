@@ -436,6 +436,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 		$f = $this->wire('modules')->get('InputfieldPageListSelect');
 		$f->attr('name', 'descex_page_id');
 		$f->label       = __('Description Page');
+		$f->icon        = 'file-text-o';
 		$f->description = __('Select a page whose content will serve as this field\'s extended description in the page editor. Only used when the Description field above is empty.');
 		$f->notes       = sprintf(__('The "%s" field on the selected page is used as the description content.'), $contentField);
 		$f->collapsed   = Inputfield::collapsedBlank;
