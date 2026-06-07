@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title'    => 'Field Descriptions Extended',
-			'version'  => 113,
+			'version'  => 114,
 			'summary'  => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author'   => 'Macrura',
 			'singular' => true,
@@ -234,7 +234,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 
 		if($this->adminTheme == 'AdminThemeUikit') {
 			return "
-				<p class='description'>{$intro}<a href='#{$id}' uk-toggle class='field-help-popup' uk-tooltip='Open help panel'>{$icon}</a></p>
+				<p class='description fde-desc'>{$intro}<a href='#{$id}' uk-toggle class='field-help-popup' uk-tooltip='Open help panel'>{$icon}</a></p>
 				<div id='{$id}' uk-offcanvas>
 					<div class='uk-offcanvas-bar' style='width:600px;'>
 						<button class='uk-offcanvas-close' type='button' uk-close></button>
@@ -245,7 +245,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 		}
 
 		$this->wire('modules')->get('JqueryMagnific');
-		$popup  = "<p class='description'>{$intro}<a href='#{$id}' class='help-pop field-help-popup' uk-tooltip='Open help'>{$icon}</a></p>";
+		$popup  = "<p class='description fde-desc'>{$intro}<a href='#{$id}' class='help-pop field-help-popup' uk-tooltip='Open help'>{$icon}</a></p>";
 		$popup .= "<div id='{$id}' class='mfp-hide white-popup-block description-extended'><h2>{$title} {$editLink}</h2>{$pageDesc}</div>";
 		$popup .= "<style>.white-popup-block{position:relative;background:#FFF;padding:20px;width:auto;max-width:800px;margin:20px auto;}</style>";
 		$popup .= "<script>$('.help-pop').magnificPopup({type:'inline'});</script>";
@@ -299,8 +299,8 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 
 		$helpToggle = '<div id="' . $id . '" class="description-extended" hidden>' . $extDesc . '</div>';
 
-		$finDesc = "<p class='description'>$newDesc</p>";
-		$finDesc = str_replace(["<p class='description'><p>", '</p></p>'], ["<p class='description'>", '</p>'], $finDesc);
+		$finDesc = "<p class='description fde-desc'>$newDesc</p>";
+		$finDesc = str_replace(["<p class='description fde-desc'><p>", '</p></p>'], ["<p class='description fde-desc'>", '</p>'], $finDesc);
 
 		return $finDesc . $helpToggle;
 

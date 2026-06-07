@@ -90,6 +90,12 @@
 	display: list-item !important;
 }
 
+/* Ensure the visible description row always has spacing below it,
+   even inside fieldtypes (e.g. InputfieldPageAutocomplete) that zero out margins. */
+p.fde-desc {
+	margin-bottom: 10px !important;
+}
+
 /** Field Specific Tweaks */
 
 .InputfieldPageAutocomplete .description-extended p {
