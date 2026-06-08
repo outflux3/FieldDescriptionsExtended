@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title'    => 'Field Descriptions Extended',
-			'version'  => 114,
+			'version'  => 115,
 			'summary'  => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author'   => 'Macrura',
 			'singular' => true,
@@ -144,26 +144,30 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 		$inputfield = $event->object;
 
 		if($inputfield->type == 'hidden') return;
-		if($event->return && strpos($event->return, 'data-editurl') !== false) return;
-		if(!$field = $inputfield->hasField) return;
-		if(!is_object($field)) return;
+		if($inputfield instanceof InputfieldFile) return;
 
+		// hasField is set for top-level template fields; sub-fields (e.g. inside Combo) have it null
+		$field = $inputfield->hasField;
+		if($field && !is_object($field)) $field = null;
 
 		if($inputfield->descriptionEx) $inputfield->description = $inputfield->descriptionEx;
 
-		$hasPerFieldPage = $this->descexPageId($field);
-		$hasModuleConfig = $this->enable_page_content && $this->descex_field_select && $this->descex_template && $this->descex_content_field;
+		// Page-content descriptions require a known template field
+		if($field) {
+			$hasPerFieldPage = $this->descexPageId($field);
+			$hasModuleConfig = $this->enable_page_content && $this->descex_field_select && $this->descex_template && $this->descex_content_field;
 
-		if(!$inputfield->description && ($hasPerFieldPage || $hasModuleConfig)) {
+			if(!$inputfield->description && ($hasPerFieldPage || $hasModuleConfig)) {
 
-			if($inputfield->class == 'FieldtypePage') {
-				$inputfield->description = '';
-				return;
+				if($inputfield->class == 'FieldtypePage') {
+					$inputfield->description = '';
+					return;
+				}
+
+				$pageHelp = $this->processPageContentDesc($inputfield);
+				$event->return = $pageHelp . $event->return;
+
 			}
-
-			$pageHelp = $this->processPageContentDesc($inputfield);
-			$event->return = $pageHelp . $event->return;
-
 		}
 
 		if($inputfield->description && strpos($inputfield->description, '-----') !== false) {
