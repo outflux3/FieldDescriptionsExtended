@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title'    => 'Field Descriptions Extended',
-			'version'  => 115,
+			'version'  => 116,
 			'summary'  => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author'   => 'Macrura',
 			'singular' => true,
@@ -138,13 +138,17 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 
 	/**
 	 * Hook callback for Inputfield::render — processes and replaces field descriptions.
+	 *
+	 * Note: file and image fields are deliberately NOT excluded here. InputfieldFile
+	 * and InputfieldImage render their description inside .InputfieldContent ahead of
+	 * the file list, exactly like any other inputfield, and prepending to $event->return
+	 * does not disturb the uploader markup or duplicate per attached file.
 	 */
 	public function extendFieldDescriptions(HookEvent $event) {
 
 		$inputfield = $event->object;
 
 		if($inputfield->type == 'hidden') return;
-		if($inputfield instanceof InputfieldFile) return;
 
 		// hasField is set for top-level template fields; sub-fields (e.g. inside Combo) have it null
 		$field = $inputfield->hasField;
@@ -172,6 +176,11 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 
 		if($inputfield->description && strpos($inputfield->description, '-----') !== false) {
 
+			// InputfieldPage delegates rendering to an inner inputfield (getInputfield()),
+			// copying description + hasField onto it, so Inputfield::render fires twice for
+			// one field. The inner one renders the description; this bails on the outer
+			// wrapper to prevent a duplicate. Note $inputfield->class holds the FIELDTYPE
+			// name ('FieldtypePage') on the wrapper and is empty on the delegate.
 			if($inputfield->class == 'FieldtypePage' || $inputfield->inputfield == 'InputfieldRadios') {
 				$inputfield->description = '';
 				return;
