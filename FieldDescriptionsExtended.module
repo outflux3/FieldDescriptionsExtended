@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title'    => 'Field Descriptions Extended',
-			'version'  => 116,
+			'version'  => 117,
 			'summary'  => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author'   => 'Macrura',
 			'singular' => true,
@@ -51,6 +51,25 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	protected $data = array();
 
 	private static $iconCache = [];
+
+	/**
+	 * Inputfield names already given a description during this request.
+	 *
+	 * Some fieldtypes delegate rendering to a second Inputfield and copy their own
+	 * description onto it — InputfieldPage::getInputfield() is the core example,
+	 * copying label/description/notes/detail and hasField onto the delegate — so
+	 * Inputfield::render fires more than once for one field, under the same name.
+	 * Whichever fires first supplies the description; later ones have their
+	 * description blanked so neither this module nor InputfieldWrapper emits a
+	 * second copy.
+	 *
+	 * Keyed on inputfield name rather than fieldtype, so it holds for delegating
+	 * types this module has never heard of, including third-party ones. Names are
+	 * already unique per rendered input — repeater items are suffixed with the item
+	 * id, Combo subfields prefixed with the container name — so fields that
+	 * legitimately render more than once are unaffected.
+	 */
+	private $renderedNames = array();
 
 	protected static $configDefaults = array(
 
@@ -156,6 +175,10 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 
 		if($inputfield->descriptionEx) $inputfield->description = $inputfield->descriptionEx;
 
+		// Dedupe key: matches the id processSplitFieldDesc() builds, so the guard and
+		// the emitted markup can never disagree about what counts as "the same field".
+		$name = (string) $inputfield->name;
+
 		// Page-content descriptions require a known template field
 		if($field) {
 			$hasPerFieldPage = $this->descexPageId($field);
@@ -163,30 +186,29 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 
 			if(!$inputfield->description && ($hasPerFieldPage || $hasModuleConfig)) {
 
-				if($inputfield->class == 'FieldtypePage') {
+				if($this->alreadyRendered($name)) {
 					$inputfield->description = '';
 					return;
 				}
 
 				$pageHelp = $this->processPageContentDesc($inputfield);
-				$event->return = $pageHelp . $event->return;
+				if($pageHelp !== '') {
+					$this->markRendered($name);
+					$event->return = $pageHelp . $event->return;
+				}
 
 			}
 		}
 
 		if($inputfield->description && strpos($inputfield->description, '-----') !== false) {
 
-			// InputfieldPage delegates rendering to an inner inputfield (getInputfield()),
-			// copying description + hasField onto it, so Inputfield::render fires twice for
-			// one field. The inner one renders the description; this bails on the outer
-			// wrapper to prevent a duplicate. Note $inputfield->class holds the FIELDTYPE
-			// name ('FieldtypePage') on the wrapper and is empty on the delegate.
-			if($inputfield->class == 'FieldtypePage' || $inputfield->inputfield == 'InputfieldRadios') {
+			if($this->alreadyRendered($name)) {
 				$inputfield->description = '';
 				return;
 			}
 
 			$extendedDesc = $this->processSplitFieldDesc($inputfield);
+			$this->markRendered($name);
 			$inputfield->description = '';
 			$event->return = $extendedDesc . $event->return;
 
@@ -342,6 +364,25 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 			self::$iconCache[$name] = is_file($path) ? trim(file_get_contents($path)) : '';
 		}
 		return self::$iconCache[$name];
+	}
+
+
+	/**
+	 * Has a description already been emitted for this inputfield name this request?
+	 *
+	 * An empty name cannot be keyed (and could not produce a stable element id
+	 * either), so it is always allowed through rather than silently collapsed.
+	 */
+	private function alreadyRendered(string $name): bool {
+		return $name !== '' && isset($this->renderedNames[$name]);
+	}
+
+
+	/**
+	 * Record that this inputfield name has been given a description.
+	 */
+	private function markRendered(string $name): void {
+		if($name !== '') $this->renderedNames[$name] = true;
 	}
 
 
