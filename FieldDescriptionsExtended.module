@@ -33,7 +33,7 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 	public static function getModuleInfo() {
 		return array(
 			'title'    => 'Field Descriptions Extended',
-			'version'  => 117,
+			'version'  => 118,
 			'summary'  => 'Create extended field descriptions and have the longer part hidden with toggle.',
 			'author'   => 'Macrura',
 			'singular' => true,
@@ -127,11 +127,23 @@ class FieldDescriptionsExtended extends WireData implements Module, Configurable
 			}
 		}
 
-		if($this->wire('page')->process != 'ProcessPageEdit') return;
-		$id = (int) $this->input->get('id');
-		if(!$id) return;
-		$this->editedPage = $this->wire('pages')->get($id);
-		if($this->editedPage->template->flags & Template::flagSystem) return;
+		// Attach to any process that edits a page, identified by the WirePageEditor
+		// interface rather than by class name. ProcessPageEdit covers the page tree,
+		// but the access branch uses ProcessUser / ProcessRole / ProcessPermission and
+		// a user's own profile uses ProcessProfile — all page editors, none of them
+		// named 'ProcessPageEdit'. Matching the name meant no hook ran at all on those
+		// screens, so descriptions rendered raw, separator and both halves visible.
+		// Third-party page editors get picked up for free.
+		$processName = (string) $this->wire('page')->process;
+		if(!$processName || !wireInstanceOf($processName, 'WirePageEditor')) return;
+
+		// ProcessProfile edits the current user and carries no id in the URL.
+		if(!$this->wire('input')->get('id') && $processName !== 'ProcessProfile') return;
+
+		// Note: no Template::flagSystem check. The user, role and permission templates
+		// are all system-flagged, so skipping system templates skipped exactly the
+		// screens this gate now exists to support.
+
 		$this->addHookAfter('Inputfield::render', $this, 'extendFieldDescriptions');
 		$this->addHookBefore('Inputfield::render', $this, 'cleanupAjaxDescriptions');
 		$this->addHookAfter('Inputfield::renderValue', $this, 'extendFieldDescriptions');
