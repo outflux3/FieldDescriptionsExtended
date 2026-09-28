@@ -92,6 +92,8 @@ If [InputfieldSimpleMDE](https://processwire.com/modules/inputfield-simple-mde/)
 
 When using SimpleMDE, the toolbar's *Insert Horizontal Rule* button (`—`) inserts the five-dash delimiter automatically.
 
+The description editor opens at the height the field asks for — `rows="3"` — rather than the editor library's fixed 300px, and it no longer fetches Font Awesome from a third-party CDN. The library only recognizes Font Awesome served from `maxcdn.bootstrapcdn.com`, so the admin's own local copy never satisfied its check and it appended a CDN `<link>` on every field-edit screen.
+
 ---
 
 ## Icons
