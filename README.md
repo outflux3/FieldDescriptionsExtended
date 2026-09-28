@@ -96,7 +96,7 @@ When using SimpleMDE, the toolbar's *Insert Horizontal Rule* button (`—`) inse
 
 ## Icons
 
-Trigger icons are Lucide SVGs stored in the `icons/` subdirectory of this module. They use `stroke="currentColor"` so they inherit the surrounding link colour.
+Trigger icons are Lucide SVGs stored in the `icons/` subdirectory of this module. They use `stroke="currentColor"` so they inherit the surrounding link color.
 
 | File | Used for |
 |---|---|

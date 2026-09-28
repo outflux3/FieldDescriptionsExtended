@@ -24,7 +24,7 @@ var initSimpleMDE = function() {
 			spellChecker: false,
 			promptURLs: true,
 			// Never fetch FontAwesome from a third-party CDN. The editor library
-			// only recognises FontAwesome served from maxcdn.bootstrapcdn.com,
+			// only recognizes FontAwesome served from maxcdn.bootstrapcdn.com,
 			// so the admin's own local copy never satisfies its check and it
 			// appends a <link> to that CDN on every field-edit screen. This
 			// editor is constructed directly rather than through
